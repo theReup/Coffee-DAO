@@ -38,7 +38,7 @@ def test_const_length(accounts, members, token, multisig, payments):
 def test_owner_events_fire(accounts, members, token, multisig, payments):
     set_all_addresses(members, token, multisig, payments, accounts)
     add_owner(accounts[0], accounts, members, token, multisig, payments)
-    tx =  members.replaceOwner(accounts[0], accounts[1], {'from': accounts[0]})
+    tx = members.replaceOwner(accounts[0], accounts[1], {'from': accounts[0]})
 
     assert len(tx.events) == 2
     assert tx.events["ownerRemoval"].values() == [accounts[0]]

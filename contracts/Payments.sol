@@ -1,7 +1,7 @@
 pragma solidity ^0.5.0;
 
 import "./SafeMath.sol";
-import './Members.sol';
+//import "./mbers.sol";
 import './governanceToken.sol';
 
 contract Payments {
@@ -10,6 +10,7 @@ contract Payments {
     event salaryPayment(address indexed worker);
     event paymentToProvider(address indexed provider);
     event taxesPayment(uint indexed amount);
+    event depositPayingToGovernanceToken(uint indexed amount);
 
     mapping ( address => uint ) lastPaymentToWorker;
     mapping ( address => uint ) lastPaymentToProvider;
@@ -25,6 +26,7 @@ contract Payments {
     address payable taxesReceiver;//to this address contract send taxes
     uint taxesAmount;//in percents
     uint taxesToBePayed;// ether amount to be payed as taxes
+    uint governanceTokenDeposit;
 
     constructor(address payable _taxesReceiver, uint _coffePrise, uint _taxesAmount)
         public
@@ -112,6 +114,14 @@ contract Payments {
         return address(this);
     }
 
+    function getGovernanceTokenDeposit() 
+        external
+        view
+        returns (uint)
+    {
+        return governanceTokenDeposit;
+    }
+
     function buyCoffee(uint amount) 
         external
         payable
@@ -119,10 +129,20 @@ contract Payments {
         require(msg.value == SafeMath.mul(coffeePrise, amount), "Balance amount could be enough to pay");
         taxesToBePayed = SafeMath.add(SafeMath.mul(msg.value, taxesAmount) / 100, taxesToBePayed);
         if(address(this).balance > m.getAllPayments()){
-            address(gt).transfer(msg.value - taxesAmount);
+            governanceTokenDeposit = SafeMath.add(governanceTokenDeposit, SafeMath.mul(msg.value, SafeMath.sub(100, taxesAmount)) / 100);
         }
-        //
+        
         emit coffeeBying(amount);    
+    }
+
+    function payDepositToGovernanceToken() 
+        external
+    {
+        require(m.isOwner(msg.sender) == true, "Only owner can call deposit paying");
+        gt.receiveEther.value(governanceTokenDeposit)();
+        
+        emit depositPayingToGovernanceToken(governanceTokenDeposit);
+        governanceTokenDeposit = 0;
     }
 
     function paySalaryToWorker() 

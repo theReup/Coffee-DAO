@@ -2,7 +2,7 @@ pragma solidity ^0.5.0;
 
 
 import "./SafeMath.sol";
-import "./Members.sol";
+import './Members.sol';
 
 contract governanceToken {
 
@@ -25,7 +25,7 @@ contract governanceToken {
 
     //storage
 
-    mapping ( address => uint ) private ownersDeposit;//ether amount could be payed to owner 
+    mapping ( address => uint ) ownersDeposit;//ether amount could be payed to owner 
     mapping ( address => uint ) public _balances;
     mapping ( address => mapping(address => uint)) public allowed;// amount of token you approve to spend by another account
 
@@ -194,13 +194,13 @@ contract governanceToken {
         public
         payable
     {
+        
         require(totalSuply != 0, "No owners to get ether");
         for(uint i = 0; i < m.getOwnersLength(); i++){
-            ownersDeposit[m.owners(i)] = ownersDeposit[m.owners(i)].add(
-                SafeMath.mul(balanceOf(m.owners(i)), msg.value) / totalSuply
-            );
+            ownersDeposit[m.owners(i)] = ownersDeposit[m.owners(i)].add(SafeMath.mul(balanceOf(m.owners(i)), msg.value) / totalSuply);
         }
         emit etherReceiving(msg.value);
+        
     }
 
     /// @dev Allows owner to get his all ether deposit

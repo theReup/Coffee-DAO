@@ -3,8 +3,6 @@ pragma solidity ^0.5.0;
 // SPDX-License-Identifier: MIT
 
 import "./SafeMath.sol";
-//import "./governanceToken.sol";
-//import "./MultiSig.sol";
 
 /**
     @title Bare-bones Token implementation
@@ -23,6 +21,7 @@ contract Members {
     event workerRemoval(address indexed worker);
     event providerAddition(address indexed provider, uint indexed payment);
     event providerRemoval(address indexed provider);
+    event humanResourcesStaffChanging(address indexed newHumanResourcesStaff);
     //storage
 
 
@@ -36,7 +35,7 @@ contract Members {
     address payable[] workers;//
     address payable[] public owners;//
     address payable[] providers;//
-    address humanResourcesStaff;// address who can add and remove workers and providers
+    address payable humanResourcesStaff;// address who can add and remove workers and providers
     uint constant public MAX_OWNERS_COUNT = 50;
     uint constant public MAX_WORKERS_COUNT = 50;
     uint constant public MAX_PROVIDERS_CONUT = 50;
@@ -93,7 +92,7 @@ contract Members {
     function getOwnersLength()
         external
         view
-    returns (uint) 
+        returns (uint) 
     {
         return owners.length;
     }
@@ -106,12 +105,20 @@ contract Members {
         return multiSigAddress;
     }
 
-    function getIsOwnerStatus(address _owner) 
+    /*function getIsOwnerStatus(address _owner) 
         external
         view
         returns (bool)
     {
         return isOwner[_owner];
+    }*/
+
+    function getHumanResourcesStaffAddress() 
+        external
+        view
+        returns (address payable)
+    {
+        return humanResourcesStaff;
     }
 
     function getWorkersLength()
@@ -147,7 +154,7 @@ contract Members {
     }
 
     function getAllPayments()
-        public
+        external
         view
         returns (uint)
     {
@@ -323,6 +330,16 @@ contract Members {
         paymentToProvider[provider] = 0;
         emit providerAddition(newProvider, paymentToProvider[newProvider]);
         emit providerRemoval(provider);
+    }
+
+    function changeHumanResourcesStaff(address payable newHumanResourcesStaff) 
+        external
+        addressNotNull(newHumanResourcesStaff)
+    {
+        require(msg.sender == multiSigAddress, "Only multiSig voting can remove owner");
+        require(newHumanResourcesStaff != humanResourcesStaff, "Change to the same address");
+        humanResourcesStaff = newHumanResourcesStaff;
+        emit humanResourcesStaffChanging(newHumanResourcesStaff);
     }
 
 }

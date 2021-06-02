@@ -14,10 +14,12 @@ contract MultiSig {
     event burnExecution(uint indexed amount, address indexed participant, uint indexed id);
     event addOwnerAdding(address indexed participant, uint indexed id);
     event addOwnerExecution(address indexed participant, uint indexed id);
-    event RemoveOwnerAdding(address indexed participant, uint indexed id);
+    event removeOwnerAdding(address indexed participant, uint indexed id);
     event removeOwnerExecution(address indexed participant, uint indexed id);
     event newCoffeePriseVotingAdding(uint indexed newPrise, uint indexed id);
     event newCoffeePriseExecution(uint indexed newPrise, uint indexed id);
+    event changeHumanResourcesStaffVotingAdding(address indexed newHumanResourcesStaff, uint indexed id);
+    event changeHumanResourcesStaffExecution(address indexed newHumanResourcesStaff, uint indexed id);
 
     //storage
 
@@ -40,6 +42,7 @@ contract MultiSig {
         uint id;
         bool executed;
     }
+
 
 
     function setGovernanceTokenContractAddress(address payable _address) 
@@ -98,6 +101,14 @@ contract MultiSig {
         return address(this);
     }
 
+    function viewConfirmationStatus(uint id) 
+        external
+        view
+        returns (bool)
+    {
+        return votingsId[id].isConfirmed;
+    }
+
 
     function confirmVotings(uint id) 
         public
@@ -115,11 +126,29 @@ contract MultiSig {
 
     //Votings
 
+    function addChangeHumanResourcesStaffVoting(address payable newHumanResourcesStaff) 
+        external
+        returns (uint)
+    {
+        require(m.isOwner(msg.sender), "Only owner can add votings");
+        votingsId[votingsCount] = votings({
+            participant : newHumanResourcesStaff,
+            amount : 0,
+            id : votingsCount,
+            isConfirmed : false,
+            confirmations : 0,
+            executed : false
+        });
+        emit changeHumanResourcesStaffVotingAdding(votingsId[votingsCount].participant, votingsCount);
+        votingsCount += 1;
+        return votingsCount - 1;
+    }
+
     function addMintVoting(uint _amount, address payable _owner) 
         external
         returns (uint)
     {
-        
+        require(m.isOwner(msg.sender), "Only owner can add votings");
         votingsId[votingsCount] = votings({
             participant : _owner,
             amount : _amount,
@@ -138,7 +167,7 @@ contract MultiSig {
         external
         returns (uint)
     {
-        
+        require(m.isOwner(msg.sender), "Only owner can add votings");
         votingsId[votingsCount] = votings({
             participant : _owner,
             amount : _amount,
@@ -157,7 +186,7 @@ contract MultiSig {
         external
         returns (uint)
     {
-        
+        require(m.isOwner(msg.sender), "Only owner can add votings");
         votingsId[votingsCount] = votings({
             participant : owner,
             amount : 0,
@@ -178,7 +207,7 @@ contract MultiSig {
         external
         returns (uint)
     {
-        
+        require(m.isOwner(msg.sender), "Only owner can add votings");
         votingsId[votingsCount] = votings({
             participant : owner,
             amount : 0,
@@ -188,7 +217,7 @@ contract MultiSig {
             executed : false
         });
         
-        emit RemoveOwnerAdding(votingsId[votingsCount].participant, votingsCount);
+        emit removeOwnerAdding(votingsId[votingsCount].participant, votingsCount);
         votingsCount += 1;
         return votingsCount - 1;
     }
@@ -197,7 +226,7 @@ contract MultiSig {
         external
         returns (uint)
     {
-        
+        require(m.isOwner(msg.sender), "Only owner can add votings");
         votingsId[votingsCount] = votings({
             participant : address(0),
             amount : newPrise,
@@ -215,9 +244,20 @@ contract MultiSig {
     //executing votings
 
 
+    function executeChangeHumanResourcesStaffVoting(uint id) 
+        external    
+    {
+
+        require(votingsId[id].executed == false, "Votings can be executed only once");
+        require(votingsId[id].isConfirmed, "Only corfirmed voting could be executed");
+        m.changeHumanResourcesStaff(votingsId[id].participant);
+        emit changeHumanResourcesStaffExecution(votingsId[id].participant, id);
+    }
+
     function executeMintVoting(uint id) 
         external    
     {
+
         require(votingsId[id].executed == false, "Votings can be executed only once");
         require(votingsId[id].isConfirmed, "Only corfirmed voting could be executed");
         gt._mint(votingsId[id].amount, votingsId[id].participant);
@@ -227,6 +267,7 @@ contract MultiSig {
     function executeBurnVoting(uint id) 
         external    
     {
+
         require(votingsId[id].executed == false, "Votings can be executed only once");
         require(votingsId[id].isConfirmed, "Only corfirmed voting could be executed");
         gt._burn(votingsId[id].amount, votingsId[id].participant);
@@ -237,6 +278,7 @@ contract MultiSig {
     function executeAddOwnerVoting(uint id) 
         external    
     {
+
         require(votingsId[id].executed == false, "Votings can be executed only once");
         require(votingsId[id].isConfirmed, "Only corfirmed voting could be executed");
         m.addOwner(votingsId[id].participant);
@@ -247,6 +289,7 @@ contract MultiSig {
     function executeRemoveOwnerVoting(uint id) 
         external    
     {
+
         require(votingsId[id].executed == false, "Votings can be executed only once");
         require(votingsId[id].isConfirmed, "Only corfirmed voting could be executed");
         m.removeOwner(votingsId[id].participant);

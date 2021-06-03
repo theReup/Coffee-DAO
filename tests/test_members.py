@@ -137,3 +137,11 @@ def test_provider_events_fire(accounts, members, token, multisig, payments):
     assert len(tx.events) == 2
     assert tx.events["providerRemoval"].values() == [accounts[0]]
     assert tx.events["providerAddition"].values() == [accounts[1], 10**18]
+
+def test_all_payments_check(accounts, members, token, multisig, payments):
+    set_all_addresses(members, token, multisig, payments, accounts)
+
+    members.addWorker(accounts[0], 10**18, {'from' : accounts[7]})
+    members.addProvider(accounts[1], 10**18, {'from' : accounts[7]})
+
+    assert members.getAllPayments() == 2 * 10**18

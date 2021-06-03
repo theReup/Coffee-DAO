@@ -23,7 +23,7 @@ def remove_owner(address, accounts, members, token, multisig, payments):
     return voting_id.return_value
 
 def mint(amount, address, accounts, members, token, multisig, payments):
-    voting_id = multisig.addMintVoting(10**18, address, {'from' : accounts[5]})
+    voting_id = multisig.addMintVoting(amount, address, {'from' : accounts[5]})
     multisig.confirmVotings(voting_id.return_value, {'from' : accounts[5]})
     multisig.confirmVotings(voting_id.return_value, {'from' : accounts[4]})
 
@@ -32,7 +32,7 @@ def mint(amount, address, accounts, members, token, multisig, payments):
     return voting_id.return_value
 
 def burn(amount, address, accounts, members, token, multisig, payments):
-    voting_id = multisig.addBurnVoting(10**18, address, {'from' : accounts[5]})
+    voting_id = multisig.addBurnVoting(amount, address, {'from' : accounts[5]})
     multisig.confirmVotings(voting_id.return_value, {'from' : accounts[3]})
     multisig.confirmVotings(voting_id.return_value, {'from' : accounts[4]})
 
@@ -78,17 +78,17 @@ def test_correct_votings_count(accounts, members, token, multisig, payments):
 
 def test_coffee_voting(accounts, members, token, multisig, payments):
     set_all_addresses(members, token, multisig, payments, accounts)
-    voting_id = multisig.addNewCoffeePriseVoting(10**18, {'from' : accounts[5]})
+    voting_id = multisig.addNewCoffeePriceVoting(10**18, {'from' : accounts[5]})
     multisig.confirmVotings(voting_id.return_value, {'from' : accounts[3]})
     multisig.confirmVotings(voting_id.return_value, {'from' : accounts[4]})
     multisig.confirmVotings(voting_id.return_value, {'from' : accounts[5]})
-    tx = multisig.executeNewCoffeePriseVoting(voting_id.return_value, {'from' : accounts[5]})
+    tx = multisig.executeNewCoffeePriceVoting(voting_id.return_value, {'from' : accounts[5]})
 
-    assert payments.getCoffeePrise() == 10**18
+    assert payments.getCoffeePrice() == 10**18
     assert len(voting_id.events) == 1
-    assert len(tx.events) == 1
-    assert voting_id.events["newCoffeePriseVotingAdding"].values() == [10**18, voting_id.return_value]
-    assert tx.events["newCoffeePriseExecution"].values() == [10**18, voting_id.return_value]
+    assert len(tx.events) == 2
+    assert voting_id.events["newCoffeePriceVotingAdding"].values() == [10**18, voting_id.return_value]
+    assert tx.events["newCoffeePriceExecution"].values() == [10**18, voting_id.return_value]
 
 def test_human_resources_change(accounts, members, token, multisig, payments):
     set_all_addresses(members, token, multisig, payments, accounts)

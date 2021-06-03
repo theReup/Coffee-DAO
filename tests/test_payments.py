@@ -69,7 +69,7 @@ def test_pay_taxes(accounts, multisig,  payments, members, token):
     assert taxes_keeper_balance_after - taxes_keeper_balance_before == (10**18 / 2500 * 13) / 100
     assert contract_balance_before - contract_balance_after == (10**18 / 2500 * 13) / 100
 
-def test_test(accounts, multisig,  payments, members, token):
+def test_mint(accounts, multisig,  payments, members, token):
     set_all_addresses(members, token, multisig, payments, accounts)
     mint(10**18, accounts[3], accounts, members, token, multisig, payments)
 

@@ -1,12 +1,22 @@
 pragma solidity ^0.5.0;
 
 
+/**
+    @notice This contract implements ether profit destribution between owners
+    Owners gets ether propoptionately to their token balance
+    Mint and burn of tokens could be called only by multisig voting
+    Owners can transfer their tokens to another owners and transfer from another owner balance by his allowance
+*/
+
+
 import "./SafeMath.sol";
 import './Members.sol';
 
 contract governanceToken {
 
     using SafeMath for uint256;
+
+    //events
 
     event mint(uint indexed amount, address payable indexed owner);
     event burn(uint indexed amount, address payable indexed owner);
@@ -15,15 +25,15 @@ contract governanceToken {
     event payingEtherToOwner(address payable owner, uint indexed amount);
     event approval(address from, address to, uint amount);
 
-    //constants
 
-    uint public totalSuply;
+    //storage
+
+    uint totalSuply;// all amount of tokens
 
     Members m;
 
     address multiSigAddress;
 
-    //storage
 
     mapping ( address => uint ) ownersDeposit;//ether amount could be payed to owner 
     mapping ( address => uint ) public _balances;
@@ -38,6 +48,8 @@ contract governanceToken {
     }
 
 
+    //functions
+
     /// @dev Fallback function calls reciveEther
     /// Requires that all ether could be deposited
     function()
@@ -46,8 +58,6 @@ contract governanceToken {
     {
         receiveEther();
     }
-
-    //functions
 
     /// @dev Allows to get owners ether deposit outside of contract
     function getOwnerDeposit()
@@ -59,7 +69,7 @@ contract governanceToken {
     }
 
     /// @dev Allows to get contract address outside of contract
-    /// Used for test with sending ether to contract
+    /// Used for tests with setting connection between contracts
     function getContractAddress()
         external 
         view 
@@ -77,6 +87,8 @@ contract governanceToken {
         return totalSuply;
     }
 
+    /// @dev Allows to view members contract address
+    /// Used for tests with setting connection between contracts
     function getMembersContractAddress() 
         external
         view
@@ -85,6 +97,8 @@ contract governanceToken {
         return address(m);
     }
 
+    /// @dev Alloes to view multisig contract address
+    /// Used for tests with setting connection between contracts
     function getMultiSigContractAddress() 
         external
         view
@@ -93,6 +107,10 @@ contract governanceToken {
         return multiSigAddress;        
     }
 
+    /// @dev Allows to set members contract address
+    /// @param _address is members contract assress
+    /// Address can be set only once by owner
+    /// Used to get state of members, their quantity etc.
     function setMembersContractAddress(address _address) 
         external
     {
@@ -101,6 +119,10 @@ contract governanceToken {
         require(m.isOwner(msg.sender), "Can be set only by owner");
     }
 
+    /// @dev Allows to set multisig contract address
+    /// @param _address is members contract assress
+    /// Address can be set only once by owner
+    /// Only one opportunity exists to call mint and burn - by multisig voting
     function setMultiSigContractAddress(address _address) 
         external
     {
@@ -130,7 +152,7 @@ contract governanceToken {
         return allowed[owner][spender];
     }
 
-    /// @dev Allows to mint tokens only by admin address
+    /// @dev Allows to mint tokens only by multisig voting
     /// @param amount is quantity of tokens to be minted
     /// @param owner is who gets amount of tokens
     function _mint(uint amount, address payable owner)
@@ -141,10 +163,9 @@ contract governanceToken {
         totalSuply = totalSuply.add(amount);
         _balances[owner] = _balances[owner].add(amount);
         emit mint(amount, owner);
-        
     }
 
-    /// @dev Allows to burn tokens only by admin address
+    /// @dev Allows to burn tokens only by multisig voting
     /// @param amount is quantity of tokens to be burned
     /// @param owner is whoes tokens will be burned
     function _burn(uint amount, address payable owner)
@@ -167,7 +188,6 @@ contract governanceToken {
         addressNotNull(sender)
         addressNotNull(recipient)
     {
-
         require(_balances[sender] >= amount, "Sender balance is less than transfer amount");
         _balances[sender] = _balances[sender].sub(amount);
         _balances[recipient] = _balances[recipient].add(amount);
@@ -177,7 +197,7 @@ contract governanceToken {
     /// @dev Allows to call transfer function from outside of contract
     /// @param to is owner who gets tokens from sender
     /// @param amount is quantity of token to be transfered
-    /// requires that you can transfer tokens only from your address
+    /// Requires that you can transfer only tokens from your address
     function transfer(address to, uint amount)
         external
         returns (bool)
@@ -194,13 +214,13 @@ contract governanceToken {
         public
         payable
     {
-        
         require(totalSuply != 0, "No owners to get ether");
         for(uint i = 0; i < m.getOwnersLength(); i++){
-            ownersDeposit[m.owners(i)] = ownersDeposit[m.owners(i)].add(SafeMath.mul(balanceOf(m.owners(i)), msg.value) / totalSuply);
-        }
+            ownersDeposit[m.owners(i)] = ownersDeposit[m.owners(i)].add(
+                SafeMath.mul(balanceOf(m.owners(i)), msg.value) / totalSuply
+            );
+        }        
         emit etherReceiving(msg.value);
-        
     }
 
     /// @dev Allows owner to get his all ether deposit

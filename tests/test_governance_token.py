@@ -200,3 +200,126 @@ def test_total_suply_increased(members, token, multisig, payments, accounts):
     mint(10**18, accounts[3], accounts, members, token, multisig, payments)
 
     assert total_suply == token.getTotalSuply() - 10**18
+
+
+#receive ether tests
+
+
+def test_sender_balance_decreases(members, token, multisig, payments, accounts):
+    set_all_addresses(members, token, multisig, payments, accounts)
+    owner_balance = token.balanceOf(accounts[3], {'from': accounts[5]})
+
+    mint(10**18, accounts[3], accounts, members, token, multisig, payments)
+    before = accounts[0].balance()
+    token.receiveEther({'from' : accounts[0], 'value': 10**18})
+    after = accounts[0].balance()
+
+    assert before - after == 10**18
+
+def test_contract_balance_increases(members, token, multisig, payments, accounts):
+    set_all_addresses(members, token, multisig, payments, accounts)
+
+    mint(10**18, accounts[3], accounts, members, token, multisig, payments)
+    before = token.balance()
+    token.receiveEther({'from' : accounts[0], 'value': 10**18})
+    after = token.balance()
+
+    assert after - before == 10**18
+
+def test_owners_deposit_increases(members, token, multisig, payments, accounts):
+    set_all_addresses(members, token, multisig, payments, accounts)
+    
+
+    mint(10**18, accounts[3], accounts, members, token, multisig, payments)
+    mint(10**18, accounts[4], accounts, members, token, multisig, payments)
+
+    token.receiveEther({'from' : accounts[0], 'value': 10**18})
+
+    deposit_0 = token.getOwnerDeposit({'from' : accounts[3]})
+    deposit_1 = token.getOwnerDeposit({'from' : accounts[4]})
+
+    assert deposit_0 == 10**18 / 2
+    assert deposit_1 == 10**18 / 2
+
+
+def test_deposit_after_mint(members, token, multisig, payments, accounts):
+    set_all_addresses(members, token, multisig, payments, accounts)
+    
+
+    mint(10**18, accounts[3], accounts, members, token, multisig, payments)
+    mint(10**18, accounts[4], accounts, members, token, multisig, payments)
+    
+    token.receiveEther({'from' : accounts[6], 'value': 10**18})
+
+    mint(2 * 10**18, accounts[5], accounts, members, token, multisig, payments)
+
+    token.receiveEther({'from' : accounts[6], 'value': 10**18})
+
+    deposit_0 = token.getOwnerDeposit({'from' : accounts[3]})
+    deposit_1 = token.getOwnerDeposit({'from' : accounts[4]})
+    deposit_2 = token.getOwnerDeposit({'from' : accounts[5]})
+
+    balance_0 = token.balanceOf(accounts[3])
+    balance_1 = token.balanceOf(accounts[4])
+    balance_2 = token.balanceOf(accounts[5])
+
+    assert balance_0 == 10**18
+    assert balance_1 == 10**18
+    assert balance_2 == 2 * 10**18
+    assert deposit_0 + deposit_1 + deposit_2== 2 * 10**18
+    assert deposit_0 == 10**18 / 2 + 10**18 / 4
+    assert deposit_1 == 10**18 / 2 + 10**18 / 4
+    assert deposit_2 == 10**18 / 2
+
+def test_deposit_after_burn(members, token, multisig, payments, accounts):
+    set_all_addresses(members, token, multisig, payments, accounts)
+    
+
+    mint(10**18, accounts[3], accounts, members, token, multisig, payments)
+    mint(10**18, accounts[4], accounts, members, token, multisig, payments)
+
+
+    token.receiveEther({'from' : accounts[6], 'value': 10**18})
+
+    burn(10**18, accounts[4], accounts, members, token, multisig, payments)
+
+    token.receiveEther({'from' : accounts[6], 'value': 10**18})
+
+
+    deposit_0 = token.getOwnerDeposit({'from' : accounts[3]})
+    deposit_1 = token.getOwnerDeposit({'from' : accounts[4]})
+
+
+    assert deposit_0 + deposit_1 == 2 * 10**18
+    assert deposit_0 == 10**18 / 2 + 10**18
+    assert deposit_1 == 10**18 / 2
+
+
+def test_fallback_calls_receive_ether_function(members, token, multisig, payments, accounts):
+    set_all_addresses(members, token, multisig, payments, accounts)
+    
+
+    mint(10**18, accounts[3], accounts, members, token, multisig, payments)
+    tx = accounts[5].transfer(token, 10**18)
+
+    assert len(tx.events) == 1
+    assert tx.events["etherReceiving"].values() == [10**18]
+
+def test_send_ether_to_owner(members, token, multisig, payments, accounts):
+    set_all_addresses(members, token, multisig, payments, accounts)
+    
+
+    mint(10**18, accounts[3], accounts, members, token, multisig, payments)
+    tx = accounts[6].transfer(token, 10**18)
+
+    deposit_before = token.getOwnerDeposit({'from' : accounts[3]})
+    contract_balance_before = token.balance()
+    owner_balance_before = accounts[3].balance()
+    token.payEtherToOwner({'from' : accounts[3]})
+    contract_balance_after = token.balance()    
+    owner_balance_after = accounts[3].balance()
+    
+    assert contract_balance_before - contract_balance_after == deposit_before
+    assert owner_balance_after - owner_balance_before == deposit_before
+    assert token.getOwnerDeposit({'from' : accounts[3]}) == 0
+

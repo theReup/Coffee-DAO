@@ -1,6 +1,16 @@
 
 pragma solidity ^0.5.0;
 
+/**
+    @notice This contract implements multisig votings by owners
+    Owner can add one of listed votings
+    Other owers can confirm any voting only once
+    Voting is confirmed when half of owners + 1 confirmed voting
+    Confirmed voting could be executed by owner 
+    Every voting executes certain functions from another contract
+ */
+
+
 import "./Members.sol";
 import "./governanceToken.sol";
 import "./Payments.sol";
@@ -16,8 +26,8 @@ contract MultiSig {
     event addOwnerExecution(address indexed participant, uint indexed id);
     event removeOwnerAdding(address indexed participant, uint indexed id);
     event removeOwnerExecution(address indexed participant, uint indexed id);
-    event newCoffeePriseVotingAdding(uint indexed newPrise, uint indexed id);
-    event newCoffeePriseExecution(uint indexed newPrise, uint indexed id);
+    event newCoffeePriceVotingAdding(uint indexed newPrice, uint indexed id);
+    event newCoffeePriceExecution(uint indexed newPrice, uint indexed id);
     event changeHumanResourcesStaffVotingAdding(address indexed newHumanResourcesStaff, uint indexed id);
     event changeHumanResourcesStaffExecution(address indexed newHumanResourcesStaff, uint indexed id);
 
@@ -29,22 +39,27 @@ contract MultiSig {
 
     Payments p;
 
-    mapping ( uint => votings ) votingsId;//Ids of votings, needed to easily find transaction by id during confirmation
-    mapping ( uint => mapping (address => bool) ) confirmedByOwner;
+    mapping ( uint => votings ) votingsId;//Ids of votings, needed to easily find transaction by id during confirmation and execituing
+    mapping ( uint => mapping (address => bool) ) confirmedByOwner;// implements controll that each owner confirm certain voting only once
     
-    uint public votingsCount;
+    uint public votingsCount;//counts votings to define their ids by votings addition
 
+    // univercal structure for each voting
     struct votings{
         address payable participant;
         uint amount;
-        uint confirmations;
-        bool isConfirmed;
+        uint confirmations;//counts confirmation of this voting
+        bool isConfirmed;//checks while execution
         uint id;
-        bool executed;
+        bool executed;//checks while execution
     }
 
 
+    //functions
 
+    /// @dev Allows to set governance token contract address
+    /// @param _address is address of governance token contract address
+    /// Address could be set only once by owner
     function setGovernanceTokenContractAddress(address payable _address) 
         external
     {
@@ -53,6 +68,9 @@ contract MultiSig {
         gt = governanceToken(_address);
     }
 
+    /// @dev Allows to set members contract address
+    /// @param _address is members contract address
+    /// Address could be set only once by owner
     function setMembersContractAddress(address _address) 
         external
     {
@@ -61,6 +79,9 @@ contract MultiSig {
         require(m.isOwner(msg.sender), "Can be set only by owner");
     }
 
+    /// @dev Allows to set payments contract address
+    /// @param _address is payments contract address
+    /// Address could be set only once by owner
     function setPaymentsContractAddress(address payable _address) 
         external
     {
@@ -69,6 +90,8 @@ contract MultiSig {
         require(m.isOwner(msg.sender), "Can be set only by owner");
     }
 
+    /// @dev Allows to view members contracts address
+    /// Used in tests for correct connection between contracts
     function getMembersContractAddress() 
         external
         view
@@ -76,6 +99,9 @@ contract MultiSig {
     {
         return address(m);
     }
+
+    /// @dev Allows to view gevernance token contract address
+    /// Used in tests for correct connection between contracts
     function getGovernanceTokenContractAddress() 
         external
         view
@@ -84,6 +110,8 @@ contract MultiSig {
         return address(gt);
     }
 
+    /// @dev Allows to view payments contract address
+    /// Used in tests for correct connection between contracts
     function getPaymentsContractAddress() 
         external
         view
@@ -91,8 +119,9 @@ contract MultiSig {
     {
         return address(p);
     }
-    
 
+    /// @dev Allows to get this contract address
+    /// Used in tests for correct connection between contracts
     function getContractAddress() 
         external
         view
@@ -101,6 +130,8 @@ contract MultiSig {
         return address(this);
     }
 
+    /// @dev Allows to view confirmation status of certain voting
+    /// @param id is id of voting you want to check status
     function viewConfirmationStatus(uint id) 
         external
         view
@@ -109,7 +140,9 @@ contract MultiSig {
         return votingsId[id].isConfirmed;
     }
 
-
+    /// @dev Allows to confirm certain voting by owner
+    /// @param id id voting id you want to confirm
+    /// Reqiures that owner confirm only once
     function confirmVotings(uint id) 
         public
     {
@@ -123,9 +156,11 @@ contract MultiSig {
         }
     }
 
+    //Votings addition functions
 
-    //Votings
-
+    /// @dev Allows to add voting of changing human resources staff
+    /// @param newHumanResourcesStaff is new address you want to replace with extisting
+    /// Adds new voting, sets given parameters, id of voting and increases voting count by one 
     function addChangeHumanResourcesStaffVoting(address payable newHumanResourcesStaff) 
         external
         returns (uint)
@@ -144,6 +179,10 @@ contract MultiSig {
         return votingsCount - 1;
     }
 
+    /// @dev Allows to add mint voting
+    /// @param _amount is amount of token to be given to owner
+    /// @param _owner is address who get tokens
+    /// Adds new voting, sets given parameters, id of voting and increases voting count by one 
     function addMintVoting(uint _amount, address payable _owner) 
         external
         returns (uint)
@@ -163,6 +202,10 @@ contract MultiSig {
         return votingsCount - 1;
     }
 
+    /// @dev Allows to add burn voting
+    /// @param _amount is amount of token to be burned from balance
+    /// @param _owner is address whoes tokens will be burned
+    /// Adds new voting, sets given parameters, id of voting and increases voting count by one 
     function addBurnVoting(uint _amount, address payable _owner) 
         external
         returns (uint)
@@ -182,6 +225,9 @@ contract MultiSig {
         return votingsCount - 1;
     }
 
+    /// @dev Allows to add voting of owner addition
+    /// @param owner is new owner to be added
+    /// Adds new voting, sets given parameters, id of voting and increases voting count by one 
     function addAddOwnerVoting(address payable owner) 
         external
         returns (uint)
@@ -201,8 +247,9 @@ contract MultiSig {
         return votingsCount - 1;
     }
 
-
-
+    /// @dev Allows to add voting of owner removal
+    /// @param owner is new owner to be removed
+    /// Adds new voting, sets given parameters, id of voting and increases voting count by one 
     function addRemoveOwnerVoting(address payable owner) 
         external
         returns (uint)
@@ -222,28 +269,34 @@ contract MultiSig {
         return votingsCount - 1;
     }
 
-    function addNewCoffeePriseVoting(uint newPrise) 
+    /// @dev Allows to add voting of changing coffee price
+    /// @param newPrice is new price of coffee
+    /// Adds new voting, sets given parameters, id of voting and increases voting count by one 
+    function addNewCoffeePriceVoting(uint newPrice) 
         external
         returns (uint)
     {
         require(m.isOwner(msg.sender), "Only owner can add votings");
         votingsId[votingsCount] = votings({
             participant : address(0),
-            amount : newPrise,
+            amount : newPrice,
             id : votingsCount,
             isConfirmed : false,
             confirmations : 0,
             executed : false
         });
         
-        emit newCoffeePriseVotingAdding(votingsId[votingsCount].amount, votingsCount);
+        emit newCoffeePriceVotingAdding(votingsId[votingsCount].amount, votingsCount);
         votingsCount += 1;
         return votingsCount - 1;
     }
 
     //executing votings
 
-
+    /// @dev Allows to execute human resources staff changing voting
+    /// @param id is voting id you want to execute
+    /// Checks execution and confirmation status before execution
+    /// Calls changeHumanResourcesStaff() function inside members contract
     function executeChangeHumanResourcesStaffVoting(uint id) 
         external    
     {
@@ -254,20 +307,26 @@ contract MultiSig {
         emit changeHumanResourcesStaffExecution(votingsId[id].participant, id);
     }
 
+    /// @dev Allows to execute mint voting
+    /// @param id is voting id you want to execute
+    /// Checks execution and confirmation status before execution
+    /// Calls _mint() function inside governance token contract
     function executeMintVoting(uint id) 
         external    
     {
-
         require(votingsId[id].executed == false, "Votings can be executed only once");
         require(votingsId[id].isConfirmed, "Only corfirmed voting could be executed");
         gt._mint(votingsId[id].amount, votingsId[id].participant);
         emit mintExecution(votingsId[id].amount, votingsId[id].participant, id);
     }
 
+    /// @dev Allows to execute burn voting
+    /// @param id is voting id you want to execute
+    /// Checks execution and confirmation status before execution
+    /// Calls _burn() function inside governance token contract
     function executeBurnVoting(uint id) 
         external    
     {
-
         require(votingsId[id].executed == false, "Votings can be executed only once");
         require(votingsId[id].isConfirmed, "Only corfirmed voting could be executed");
         gt._burn(votingsId[id].amount, votingsId[id].participant);
@@ -275,10 +334,13 @@ contract MultiSig {
         emit burnExecution(votingsId[id].amount, votingsId[id].participant, id);
     }
 
+    /// @dev Allows to execute owner addition voting
+    /// @param id is voting id you want to execute
+    /// Checks execution and confirmation status before execution
+    /// Calls addOwner() function inside members contract
     function executeAddOwnerVoting(uint id) 
         external    
     {
-
         require(votingsId[id].executed == false, "Votings can be executed only once");
         require(votingsId[id].isConfirmed, "Only corfirmed voting could be executed");
         m.addOwner(votingsId[id].participant);
@@ -286,6 +348,10 @@ contract MultiSig {
         emit addOwnerExecution(votingsId[id].participant, id);
     }
 
+    /// @dev Allows to execute owner removal voting
+    /// @param id is voting id you want to execute
+    /// Checks execution and confirmation status before execution
+    /// Calls removeOwner() function inside members contract
     function executeRemoveOwnerVoting(uint id) 
         external    
     {
@@ -297,14 +363,18 @@ contract MultiSig {
         emit removeOwnerExecution(votingsId[id].participant, id);
     }
 
-    function executeNewCoffeePriseVoting(uint id) 
+    /// @dev Allows to execute owner removal voting
+    /// @param id is voting id you want to execute
+    /// Checks execution and confirmation status before execution
+    /// Calls removeOwner() function inside members contract
+    function executeNewCoffeePriceVoting(uint id) 
         external
     {
         require(votingsId[id].executed == false, "Votings can be executed only once");
         require(votingsId[id].isConfirmed, "Only corfirmed voting could be executed");
-        p.changeCoffeePrise(votingsId[id].amount);
+        p.changeCoffeePrice(votingsId[id].amount);
         votingsId[id].executed = true;
-        emit newCoffeePriseExecution(votingsId[id].amount, id);
+        emit newCoffeePriceExecution(votingsId[id].amount, id);
     }
 
 }

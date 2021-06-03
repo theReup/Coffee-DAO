@@ -304,6 +304,7 @@ contract MultiSig {
         require(votingsId[id].executed == false, "Votings can be executed only once");
         require(votingsId[id].isConfirmed, "Only corfirmed voting could be executed");
         m.changeHumanResourcesStaff(votingsId[id].participant);
+        votingsId[id].executed = true;
         emit changeHumanResourcesStaffExecution(votingsId[id].participant, id);
     }
 
@@ -317,6 +318,7 @@ contract MultiSig {
         require(votingsId[id].executed == false, "Votings can be executed only once");
         require(votingsId[id].isConfirmed, "Only corfirmed voting could be executed");
         gt._mint(votingsId[id].amount, votingsId[id].participant);
+        votingsId[id].executed = true;
         emit mintExecution(votingsId[id].amount, votingsId[id].participant, id);
     }
 

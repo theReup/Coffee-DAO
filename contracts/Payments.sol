@@ -183,6 +183,7 @@ contract Payments {
     function payDepositToGovernanceToken() 
         external
     {
+        require(address(this).balance >= governanceTokenDeposit, "Balance could be onough");
         require(m.isOwner(msg.sender) == true, "Only owner can call deposit paying");
         gt.receiveEther.value(governanceTokenDeposit)();
         
@@ -195,6 +196,7 @@ contract Payments {
     function paySalaryToWorker() 
         external    
     {    
+        require(address(this).balance >= m.salary(msg.sender), "Balance could be onough");
         require(m.isWorker(msg.sender), "Only worker can call for salary");
         if(SafeMath.sub(now, lastPaymentToWorker[msg.sender]) > 4 * 3600 * 24 * 7){
             msg.sender.transfer(m.salary(msg.sender));
@@ -208,6 +210,7 @@ contract Payments {
     function payToProvider() 
         external
     {
+        require(address(this).balance >= m.paymentToProvider(msg.sender), "Balance could be onough");
         require(m.isProvider(msg.sender), "Only provider can call for payment");
         if(SafeMath.sub(now, lastPaymentToProvider[msg.sender]) > 4 * 3600 * 24 * 7){
             msg.sender.transfer(m.paymentToProvider(msg.sender));
@@ -222,6 +225,7 @@ contract Payments {
         external
     {
         require(m.isOwner(msg.sender), "Only owner can pay taxes");
+        require(address(this).balance >= taxesToBePayed, "Balance could be anough");
         if(SafeMath.sub(now, lastTaxesPayment) > 4 * 3600 * 24 * 7){
             taxesReceiver.transfer(taxesToBePayed);
         }

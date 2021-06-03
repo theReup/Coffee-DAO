@@ -31,5 +31,4 @@ $ geth --http --http.corsdomain="https://remix.ethereum.org" --http.api web3,eth
 ```
 
 3.Set the ENVIRONMENT parameter in Remix to WEB3 provider
-
 4. Deploy contracts and test!!!

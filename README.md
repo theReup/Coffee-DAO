@@ -24,9 +24,12 @@ check from there
 We are using the second way cause it more faster.
 
 1.Copy this repository to Remix IDE: https://remix.ethereum.org/
+
 2.Install Geth (https://geth.ethereum.org/downloads/) and run on your local machine:
 ```shell
 $ geth --http --http.corsdomain="https://remix.ethereum.org" --http.api web3,eth,debug,personal,net --vmdebug --datadir ./ethereum --dev --allow-insecure-unlock console
 ```
+
 3.Set the ENVIRONMENT parameter in Remix to WEB3 provider
+
 4. Deploy contracts and test!!!
